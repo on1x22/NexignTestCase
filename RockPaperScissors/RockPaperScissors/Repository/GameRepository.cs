@@ -26,13 +26,25 @@ namespace RockPaperScissors.Repository
             return await dbContext.Players.ToListAsync();
         }
 
+        public async Task<List<Game>> GetAllGames()
+        {
+            return await dbContext.Games.ToListAsync();
+        }
 
+        public async Task<List<Round>> GetAllRounds()
+        {
+            return await dbContext.Rounds.ToListAsync();
+        }
 
 
 
         public async Task<Player> CreatePlayer(string playerName)
         {
-            var player = new Player { Name = playerName };
+            var player = await GetPlayer(playerName);
+            if (player != null) 
+                return player;
+            
+            player = new Player { Name = playerName };
             await dbContext.Players.AddAsync(player);
             await dbContext.SaveChangesAsync();
             return player;
@@ -45,10 +57,27 @@ namespace RockPaperScissors.Repository
 
             var game = new Game();
             game.PlayerOneId = player.Id;
-            game.PlayerOne = player;
+            //game.PlayerOne = player;
             await dbContext.Games.AddAsync(game);
             await dbContext.SaveChangesAsync();
             return game;
         }
+        public async Task<Game> FindGame(int gameId) => 
+            await dbContext.Games.FirstOrDefaultAsync(g => g.Id == gameId);
+        
+        public async Task ConnectSecondPlayerToTheGame(Game game, Player secondPlayer)
+        {
+            game.PlayerTwoId = secondPlayer.Id;
+            game.PlayerTwo = secondPlayer;
+            dbContext.Attach(game);
+            dbContext.Entry(game).Property(g => g.PlayerTwoId).IsModified=true;
+            //dbContext.Entry(game).Property(g =>g.PlayerTwo).IsModified=true;
+            await dbContext.SaveChangesAsync();
+        }
+
+        private async Task<Player> GetPlayer(string playerName) => 
+            await dbContext.Players.FirstOrDefaultAsync(p => p.Name == playerName);
+
+        
     }
 }

@@ -7,11 +7,11 @@ namespace RockPaperScissors.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class GameController : ControllerBase
+    public class gameController : ControllerBase
     {
         private readonly IGameRepository repository;
 
-        public GameController(IGameRepository repository) 
+        public gameController(IGameRepository repository) 
         {
             this.repository = repository;
         }
@@ -36,6 +36,26 @@ namespace RockPaperScissors.Controllers
 
         }
 
+        [HttpGet("getallgames")]
+        public async Task<IActionResult> GetAllGames()
+        {
+            return Ok(await repository.GetAllGames());
+
+        }
+
+        [HttpGet("getallrounds")]
+        public async Task<IActionResult> GetAllRounds()
+        {
+            return Ok(await repository.GetAllRounds());
+
+        }
+
+        /*// GET: GameController
+        public ActionResult Index()
+        {
+            return View();
+        }*/
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateGame([FromQuery] string playerName) 
         {
@@ -46,80 +66,19 @@ namespace RockPaperScissors.Controllers
 
             return Ok($"Игрок с кодом {game.PlayerOneId} создал игру {game.Id}");
         }
-        
-        /*// GET: GameController
-        public ActionResult Index()
-        {
-            return View();
-        }
 
-        // GET: GameController/Details/5
-        public ActionResult Details(int id)
+        [HttpPost("{gameId}/join/{playerTwoName}")]
+        public async Task<IActionResult> ConnectSecondPlayerToTheGame(int gameId, string playerTwoName)
         {
-            return View();
-        }
+            var game = await repository.FindGame(gameId);
+            if (game == null)
+                return BadRequest($"Игры с Id {gameId} не существует");
 
-        // GET: GameController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
+            var player2 = await repository.CreatePlayer(playerTwoName);
+            //game.PlayerTwoId = player2.Id;
+            await repository.ConnectSecondPlayerToTheGame(game, player2);
 
-        // POST: GameController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            return Ok($"Игрок с кодом {game.PlayerTwoId} подключился к игре {game.Id}");
         }
-
-        // GET: GameController/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: GameController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: GameController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: GameController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }*/
     }
 }
