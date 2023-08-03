@@ -76,7 +76,20 @@ namespace RockPaperScissors.Controllers
             if (game == null)
                 return BadRequest($"Игры с Id {gameId} не существует");
 
-            var player2 = await repository.CreatePlayer(playerTwoName);
+            
+
+            // Если игрок уже подключен к этой игре
+            var player2 = await repository.GetPlayer(playerTwoName);
+            if (player2 != null && (game.PlayerOneId == player2.Id ||
+                                    game.PlayerTwoId == player2.Id))
+                return BadRequest($"Игрок с Id {player2.Id} уже подключен к игре с Id {gameId}");
+
+            // Если игрок подключается к существующей игре
+            if(game.PlayerOneId != 0 && game.PlayerTwoId != 0)
+                return BadRequest($"Нельзя подключиться к существующей игре с Id {gameId}");
+
+            // Gдключение игрока к игре
+            player2 = await repository.CreatePlayer(playerTwoName);
             //game.PlayerTwoId = player2.Id;
             await repository.ConnectSecondPlayerToTheGame(game, player2);
 
@@ -102,18 +115,35 @@ namespace RockPaperScissors.Controllers
                 return BadRequest($"Игрок с Id {playerId} ходит не в свой ход. " +
                     $"Ход необходимо выполнить другому игроку");
 
-            var resultTurn = await repository.MakeTurn(gameId, playerId, turn);
-            if (resultTurn == null) 
+            if (!IsStringOfTurnCorrect(turn))
                 return BadRequest("Задан некорректный ход. Должны быть только " +
                     "\"камень\", \"ножницы\" или \"бумага\"");
+
+            /*var resultTurn = */
+            await repository.MakeTurn(gameId, playerId, turn);
+            /*if (resultTurn == null) 
+                return BadRequest("Задан некорректный ход. Должны быть только " +
+                    "\"камень\", \"ножницы\" или \"бумага\"");*/
+
+            var currentLastRound = await repository.GetLastRoundInGame(gameId);
+            var resultTurn = currentLastRound.WinnerId.ToString();
+
+            /*if (resultTurn == null)
+                return BadRequest("Задан некорректный ход. Должны быть только " +
+                    "\"камень\", \"ножницы\" или \"бумага\"");*/
 
             if (int.TryParse(resultTurn, out _))
             {
                 if (resultTurn == ((int)Round.ResultOfGame.Draw).ToString())
-                    return Ok($"Ничья в раунде");
+                    return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
+                              $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
+                              $"Ничья в раунде {currentLastRound.RoundNumber}");
 
                 //var winnerId = await GetWinnerOfRoundId(gameId, (int)resultTurn);
-                return Ok($"В раунде победил игрок с кодом {/*playerId*/resultTurn}");
+
+                return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
+                          $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
+                          $"В раунде {currentLastRound.RoundNumber} победил игрок с кодом {/*playerId*/resultTurn}");
             }
             
             var winnerInGame = await CheckWinnerOfGame(gameId);
@@ -141,7 +171,8 @@ namespace RockPaperScissors.Controllers
             if (winsOfPlayerTwo == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
                 return Round.ResultOfGame.PlayerTwoWin;
 
-            if (roundsInGame.Count() == Game.MAX_ROUNDS)
+            if (roundsInGame.Count() == Game.MAX_ROUNDS &&
+                roundsInGame[Game.MAX_ROUNDS-1].PlayerTwoTurn != null)
             {
                 if (winsOfPlayerOne > winsOfPlayerTwo)
                     return Round.ResultOfGame.PlayerOneWin;
@@ -154,6 +185,11 @@ namespace RockPaperScissors.Controllers
             }
 
             return Round.ResultOfGame.IncorrectResult;
+        }
+
+        private bool IsStringOfTurnCorrect(string turn)
+        {
+            return turn == "камень" || turn == "ножницы" || turn == "бумага";
         }
 
         private async Task<string> GetWinnerOfRoundId (int gameId, Round.ResultOfGame resultOfGame)
@@ -171,7 +207,7 @@ namespace RockPaperScissors.Controllers
                     winnerId = ((int)Round.ResultOfGame.PlayerTwoWin).ToString();
                     break;
                 case Round.ResultOfGame.Draw:
-                    winnerId = ((int)Round.ResultOfGame.PlayerOneWin).ToString();
+                    winnerId = ((int)Round.ResultOfGame.Draw).ToString();
                     break;
             }
 

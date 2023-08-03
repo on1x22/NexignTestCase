@@ -10,6 +10,7 @@ namespace RockPaperScissors.Repository
         Task<List<Game>> GetAllGames();
         Task<List<Round>> GetAllRounds();
 
+        Task<Player> GetPlayer(string playerName);
         Task<Player> CreatePlayer(string playerName);
         Task<Game> CreateGame(Player player);
         Task<Game> GetGame(int gameId);
@@ -18,6 +19,7 @@ namespace RockPaperScissors.Repository
         //Task<Round> CreateRound(Round round);
 
         Task<string> MakeTurn(int gameId, int playerId, string turn);
+        Task<Round> GetLastRoundInGame(int gameId);
 
         Task<bool> CheckPlayerInGame(int gameId, int playerId);
 

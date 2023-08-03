@@ -80,12 +80,12 @@ namespace RockPaperScissors.Repository
 
         public async Task<string> MakeTurn(int gameId, int playerId, string turn)
         {
-            if (!IsStringOfTurnCorrect(turn))
-                return default;
+            /*if (!IsStringOfTurnCorrect(turn))
+                return default;*/
 
-            var round = await dbContext.Rounds.Where(r => r.GameId == gameId)
+            var round = await GetLastRoundInGame(gameId);/* await dbContext.Rounds.Where(r => r.GameId == gameId)
                                               .OrderBy(r => r.RoundNumber)
-                                              .LastAsync();
+                                              .LastAsync();*/
 
             var isFirstPlayerTurn = GetGame(gameId).Result.PlayerOneId == playerId;
             if (!isFirstPlayerTurn)
@@ -117,6 +117,12 @@ namespace RockPaperScissors.Repository
             return turn;
         }
 
+        public async Task<Round> GetLastRoundInGame(int gameId) =>    
+            await dbContext.Rounds.Where(r => r.GameId == gameId)
+                                  .OrderBy(r => r.RoundNumber)
+                                  .LastAsync();
+        
+
         public async Task<bool> CheckPlayerInGame(int gameId, int playerId)
         {
             var isPalyerInGame = await dbContext.Games.Where(g => g.Id == gameId &&
@@ -126,7 +132,7 @@ namespace RockPaperScissors.Repository
             return isPalyerInGame;
         }
 
-        private async Task<Player> GetPlayer(string playerName) => 
+        public async Task<Player> GetPlayer(string playerName) => 
             await dbContext.Players.FirstOrDefaultAsync(p => p.Name == playerName);
 
         public async Task<int?> CheckWhoseTurn(int gameId)
@@ -203,6 +209,7 @@ namespace RockPaperScissors.Repository
         {
             return turn == "камень" || turn == "ножницы" || turn == "бумага";
         }
+
         private ResultOfGame GetWnnerIdOfRound(Round round)
         {
             ResultOfGame result;// = ResultOfGame.IncorrectResult;
