@@ -99,7 +99,7 @@ namespace RockPaperScissors.Controllers
                 return BadRequest($"Игра с Id {gameId} уже закончена. Начните новую игру");
 
             if (playerNumberWhoseTurn != playerId)
-                return BadRequest($"Игрок с Id {gameId} ходит не в свой ход. " +
+                return BadRequest($"Игрок с Id {playerId} ходит не в свой ход. " +
                     $"Ход необходимо выполнить другому игроку");
 
             var resultTurn = await repository.MakeTurn(gameId, playerId, turn);
@@ -107,10 +107,75 @@ namespace RockPaperScissors.Controllers
                 return BadRequest("Задан некорректный ход. Должны быть только " +
                     "\"камень\", \"ножницы\" или \"бумага\"");
 
+            if (int.TryParse(resultTurn, out _))
+            {
+                if (resultTurn == ((int)Round.ResultOfGame.Draw).ToString())
+                    return Ok($"Ничья в раунде");
+
+                //var winnerId = await GetWinnerOfRoundId(gameId, (int)resultTurn);
+                return Ok($"В раунде победил игрок с кодом {/*playerId*/resultTurn}");
+            }
+            
+            var winnerInGame = await CheckWinnerOfGame(gameId);
+            if (winnerInGame != Round.ResultOfGame.IncorrectResult)
+            {
+                var winnerId = await GetWinnerOfRoundId(gameId, winnerInGame);
+                return Ok($"Игрок {winnerId} победил в игре {gameId}");
+            }
+
             return Ok($"Игрок {playerId} выполнил ход");
         }
 
+        private async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
+        {
+            var roundsInGame = await repository.GetRoundsInGame(gameId);
 
+            var winsOfPlayerOne = roundsInGame
+                .Where(r => r.WinnerId == (int)Round.ResultOfGame.PlayerOneWin).Count();
+            var winsOfPlayerTwo = roundsInGame
+                .Where(r => r.WinnerId == (int)Round.ResultOfGame.PlayerTwoWin).Count();
 
+            if (winsOfPlayerOne == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
+                return Round.ResultOfGame.PlayerOneWin;
+
+            if (winsOfPlayerTwo == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
+                return Round.ResultOfGame.PlayerTwoWin;
+
+            if (roundsInGame.Count() == Game.MAX_ROUNDS)
+            {
+                if (winsOfPlayerOne > winsOfPlayerTwo)
+                    return Round.ResultOfGame.PlayerOneWin;
+
+                if (winsOfPlayerOne < winsOfPlayerTwo)
+                    return Round.ResultOfGame.PlayerTwoWin;
+
+                if (winsOfPlayerOne == winsOfPlayerTwo)
+                    return Round.ResultOfGame.Draw;
+            }
+
+            return Round.ResultOfGame.IncorrectResult;
+        }
+
+        private async Task<string> GetWinnerOfRoundId (int gameId, Round.ResultOfGame resultOfGame)
+        {
+            string winnerId = string.Empty;
+
+            var game = await repository.GetGame (gameId);
+
+            switch (resultOfGame)
+            {
+                case Round.ResultOfGame.PlayerOneWin:
+                    winnerId = ((int)Round.ResultOfGame.PlayerOneWin).ToString();
+                    break;
+                case Round.ResultOfGame.PlayerTwoWin:
+                    winnerId = ((int)Round.ResultOfGame.PlayerTwoWin).ToString();
+                    break;
+                case Round.ResultOfGame.Draw:
+                    winnerId = ((int)Round.ResultOfGame.PlayerOneWin).ToString();
+                    break;
+            }
+
+            return winnerId;
+        }
     }
 }

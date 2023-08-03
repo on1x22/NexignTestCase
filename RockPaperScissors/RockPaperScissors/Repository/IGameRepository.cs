@@ -22,5 +22,7 @@ namespace RockPaperScissors.Repository
         Task<bool> CheckPlayerInGame(int gameId, int playerId);
 
         Task<int?> CheckWhoseTurn(int gameId);
+
+        Task<List<Round>> GetRoundsInGame(int gameId);
     }
 }

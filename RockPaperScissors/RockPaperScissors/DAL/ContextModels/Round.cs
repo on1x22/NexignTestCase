@@ -9,12 +9,18 @@ namespace RockPaperScissors.DAL.ContextModels
         public int Id { get; set; }
         public int RoundNumber { get; set; }
         public int GameId { get; set; }
-        public string PlayerOneTurn { get; set; }
-        public string PlayerTwoTurn { get; set; }
-        public int WinnerId { get; set; }
+        public string? PlayerOneTurn { get; set; }
+        public string? PlayerTwoTurn { get; set; }
+        public int? WinnerId { get; set; }
 
-        //[NotMapped]
-        //public const int MAX_ROUNDS = 5;
+        
+        public enum ResultOfGame
+        {
+            IncorrectResult = -1,
+            Draw = 0,
+            PlayerOneWin = 1,
+            PlayerTwoWin = 2
+        }
 
 
         public virtual Game Game { get; set; }

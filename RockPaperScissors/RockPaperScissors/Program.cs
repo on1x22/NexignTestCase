@@ -35,7 +35,7 @@ void RegisterServices(IServiceCollection services)
     services.AddEndpointsApiExplorer();
     services.AddSwaggerGen();
     services.AddTransient<IGameRepository, GameRepository>();
-
+    services.AddLogging(builder => builder.AddConsole());
 
 
     services.AddDbContext<GameDbContext>(options => 
