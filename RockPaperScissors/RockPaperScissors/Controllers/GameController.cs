@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using RockPaperScissors.DAL.ContextModels;
 using RockPaperScissors.DAL.Contexts;
 using RockPaperScissors.Repository;
+using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RockPaperScissors.Controllers
@@ -13,13 +15,13 @@ namespace RockPaperScissors.Controllers
     {
         private readonly IGameRepository repository;
 
-        public gameController(IGameRepository repository) 
+        public gameController(IGameRepository repository)
         {
             this.repository = repository;
         }
 
         [HttpPost("addplayer")]
-        public async Task<IActionResult> AddPlayer([FromQuery]  string playerName)
+        public async Task<IActionResult> AddPlayer([FromQuery] string playerName)
         {
             if (playerName == null)
                 return BadRequest("Не задано имя игрока");
@@ -52,22 +54,29 @@ namespace RockPaperScissors.Controllers
 
         }
 
-        /*// GET: GameController
-        public ActionResult Index()
-        {
-            return View();
-        }*/
-
         [HttpPost("create")]
-        public async Task<IActionResult> CreateGame([FromQuery] string playerName) 
+        public async Task<IActionResult> CreateGame([FromQuery] string playerName, bool withComputer = false)
         {
+            Player computer = null;
+            if (withComputer == true)
+                computer = await repository.CreatePlayer("computer", id:Player.COMPUTER_ID);
+
             var player1 = await repository.CreatePlayer(playerName);
             var game = await repository.CreateGame(player1);
             if (game == null)
                 return BadRequest();
 
+            if (computer != null)
+                return await ConnectSecondPlayerToTheGame(game.Id, computer.Name);
+
             return Ok($"Игрок с кодом {game.PlayerOneId} создал игру {game.Id}");
         }
+
+        /*[HttpPost("create/withcomputer")]
+        public async Task<IActionResult> CreateGameWithComputer([FromQuery] string playerName)
+        {
+
+        }*/
 
         [HttpPost("{gameId}/join/{playerTwoName}")]
         public async Task<IActionResult> ConnectSecondPlayerToTheGame(int gameId, string playerTwoName)
@@ -134,7 +143,8 @@ namespace RockPaperScissors.Controllers
 
             if (int.TryParse(resultTurn, out _))
             {
-                if (resultTurn == ((int)Round.ResultOfGame.Draw).ToString())
+                return Ok(GetStatisticsOfRound(game, currentLastRound));
+                /*if (resultTurn == ((int)Round.ResultOfGame.Draw).ToString())
                     return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
                               $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
                               $"Ничья в раунде {currentLastRound.RoundNumber}");
@@ -143,8 +153,9 @@ namespace RockPaperScissors.Controllers
 
                 return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
                           $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
-                          $"В раунде {currentLastRound.RoundNumber} победил игрок с кодом {/*playerId*/resultTurn}");
+                          $"В раунде {currentLastRound.RoundNumber} победил игрок с кодом {resultTurn}");*/
             }
+
             
             var winnerInGame = await CheckWinnerOfGame(gameId);
             if (winnerInGame != Round.ResultOfGame.IncorrectResult)
@@ -153,7 +164,85 @@ namespace RockPaperScissors.Controllers
                 return Ok($"Игрок {winnerId} победил в игре {gameId}");
             }
 
+            if (game.PlayerTwoId == Player.COMPUTER_ID && currentLastRound.WinnerId == null)
+            {
+                return await MakeTurn(gameId, game.PlayerTwoId, GetComputerTurn());
+            }
+
             return Ok($"Игрок {playerId} выполнил ход");
+        }
+
+        [HttpGet("{gameId}/stat")]
+        public async Task<IActionResult> GetStatisticsOfGame(int gameId)
+        {
+            var game = await repository.GetGame(gameId);
+            if(game == null)
+                return BadRequest($"Игра с Id {gameId} не существует");
+
+            var roundsInGame = await repository.GetRoundsInGame(gameId);
+
+            if (await CheckWinnerOfGame(gameId) == Round.ResultOfGame.IncorrectResult)
+                return BadRequest($"Статистика по игре с Id {gameId} не доступна, " +
+                                  $"так как игра ещё не завершена");
+
+            
+            var resultString = new StringBuilder();
+            resultString.AppendLine($"Id игры {gameId}");
+            foreach (var round in roundsInGame)
+            {
+                if (round.WinnerId != null)
+                    resultString.Append(GetStatisticsOfRound(game, round));
+                /*resultString.AppendLine($"Раунд {round.RoundNumber}\n" +
+                                        $"Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
+                                        $"Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n");*/
+
+            }
+
+            resultString.Append(GetWinnerOfGame(await CheckWinnerOfGame(gameId)) + "\n\n");
+
+            return Ok(resultString.ToString());
+        }
+
+        [HttpGet("{gameId}/stat/current")]
+        public async Task<IActionResult> GetCurrentStatisticsOfGame(int gameId)
+        {
+            var game = await repository.GetGame(gameId);
+            if (game == null)
+                return BadRequest($"Игра с Id {gameId} не существует");
+
+            var roundsInGame = await repository.GetRoundsInGame(gameId);
+            if (roundsInGame.Count() == 0 ||
+                (roundsInGame.Count() == 1 && roundsInGame[0].WinnerId == null))
+                return BadRequest($"В игре с Id {gameId} ещё не сыграно ни одного раунда");
+
+            var resultString = new StringBuilder();
+            resultString.AppendLine($"Id игры {gameId}\nСтатистика по сыгранным раундам:");
+
+            foreach (var round in roundsInGame)
+            {
+                if (round.WinnerId != null)
+                    resultString.Append(GetStatisticsOfRound(game, round));
+            }
+
+            return Ok(resultString.ToString());
+        }
+
+        private string GetStatisticsOfRound (Game game, Round round)
+        {
+            string result = string.Empty;
+
+            if (round.WinnerId == (int)Round.ResultOfGame.Draw)
+                return $"   Раунд {round.RoundNumber}\n" +
+                       $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
+                       $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
+                       $"   Результат: ничья\n\n";
+
+            //var winnerId = await GetWinnerOfRoundId(gameId, (int)resultTurn);
+
+            return $"   Раунд {round.RoundNumber}\n" +
+                   $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
+                   $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
+                   $"   Результат: победа игрока {round.WinnerId}\n\n";
         }
 
         private async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
@@ -212,6 +301,38 @@ namespace RockPaperScissors.Controllers
             }
 
             return winnerId;
+        }
+
+        private string GetWinnerOfGame(Round.ResultOfGame resultOfGame)
+        {
+            string result = string.Empty;
+
+            switch (resultOfGame)
+            {
+                case (Round.ResultOfGame.PlayerOneWin):
+                case (Round.ResultOfGame.PlayerTwoWin):
+                    result = $"Результат игры: победа игрока {(int)resultOfGame}";
+                    break;
+                case (Round.ResultOfGame.Draw):
+                    result = $"Результат игры: ничья";
+                    break;
+                case (Round.ResultOfGame.IncorrectResult):
+                    result = $"Результат игры: ошибка";
+                    break;
+            }
+            return result;
+        }
+
+        private string GetComputerTurn()
+        {
+            var random = new Random();
+            var values = new List<string>{
+                "камень",
+                "ножницы",
+                "бумага"};
+            int index = random.Next(values.Count);
+            
+            return values[index];
         }
     }
 }

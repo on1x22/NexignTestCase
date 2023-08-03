@@ -37,14 +37,21 @@ namespace RockPaperScissors.Repository
         }
 
 
+        public Task<Player> CreateComputer()
+        {
+            throw new NotImplementedException();
+        }
 
-        public async Task<Player> CreatePlayer(string playerName)
+        public async Task<Player> CreatePlayer(string playerName, int? id = null)
         {
             var player = await GetPlayer(playerName);
             if (player != null) 
                 return player;
             
             player = new Player { Name = playerName };
+            if (id != null)
+                player.Id = id.Value;
+
             await dbContext.Players.AddAsync(player);
             await dbContext.SaveChangesAsync();
             return player;
@@ -205,10 +212,10 @@ namespace RockPaperScissors.Repository
             }
         }
 
-        bool IsStringOfTurnCorrect(string turn)
+        /*bool IsStringOfTurnCorrect(string turn)
         {
             return turn == "камень" || turn == "ножницы" || turn == "бумага";
-        }
+        }*/
 
         private ResultOfGame GetWnnerIdOfRound(Round round)
         {
@@ -257,6 +264,7 @@ namespace RockPaperScissors.Repository
 
         public async Task<List<Round>> GetRoundsInGame(int gameId) =>
             await dbContext.Rounds.Where(r => r.GameId == gameId).ToListAsync();
+
         
 
         public enum ResultOfGame

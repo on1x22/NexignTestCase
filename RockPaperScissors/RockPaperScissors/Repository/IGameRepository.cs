@@ -11,7 +11,8 @@ namespace RockPaperScissors.Repository
         Task<List<Round>> GetAllRounds();
 
         Task<Player> GetPlayer(string playerName);
-        Task<Player> CreatePlayer(string playerName);
+        Task<Player> CreateComputer();
+        Task<Player> CreatePlayer(string playerName, int? id = null);
         Task<Game> CreateGame(Player player);
         Task<Game> GetGame(int gameId);
 
