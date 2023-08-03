@@ -7,7 +7,6 @@ namespace RockPaperScissors.DAL.ContextModels
     {
         [Key]
         public int Id { get; set; }
-        //public string Name { get; set; }
         public int PlayerOneId { get; set; }
         public int PlayerTwoId { get; set; }
 
@@ -16,12 +15,9 @@ namespace RockPaperScissors.DAL.ContextModels
         [NotMapped]
         public const int WINS_IN_ROUNDS_TO_WIN_THE_GAME = 5;
 
-        //[ForeignKey("PlayerOneId")]
         public virtual Player PlayerOne { get; set; }
-        //[ForeignKey("PlayerTwoId")]
         public virtual Player PlayerTwo { get; set; }
 
-        //public List<Round> Rounds { get; set; }
         public virtual ICollection<Round> Rounds { get; set; }
     }
 }

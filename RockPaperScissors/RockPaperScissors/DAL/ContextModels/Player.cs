@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.RegularExpressions;
 
 namespace RockPaperScissors.DAL.ContextModels
 {
@@ -9,7 +8,6 @@ namespace RockPaperScissors.DAL.ContextModels
         [Key]
         public int Id { get; set; }
         public string Name { get; set; }
-        //public Guid Code { get; set; }
         [NotMapped]
         public const int COMPUTER_ID = -1;
 

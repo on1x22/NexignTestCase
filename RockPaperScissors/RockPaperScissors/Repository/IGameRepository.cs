@@ -4,22 +4,18 @@ namespace RockPaperScissors.Repository
 {
     public interface IGameRepository
     {
-        Task CreatePlayer_test(string playerName);
-
-        Task<List<Player>> GetAllPlayers();
-        Task<List<Game>> GetAllGames();
-        Task<List<Round>> GetAllRounds();
-
         Task<Player> GetPlayer(string playerName);
-        Task<Player> CreateComputer();
+
         Task<Player> CreatePlayer(string playerName, int? id = null);
+
         Task<Game> CreateGame(Player player);
+
         Task<Game> GetGame(int gameId);
 
         Task ConnectSecondPlayerToTheGame(Game game, Player secondPlayer);
-        //Task<Round> CreateRound(Round round);
 
         Task<string> MakeTurn(int gameId, int playerId, string turn);
+
         Task<Round> GetLastRoundInGame(int gameId);
 
         Task<bool> CheckPlayerInGame(int gameId, int playerId);
