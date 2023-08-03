@@ -9,10 +9,23 @@ namespace RockPaperScissors.DAL.ContextModels
         public int Id { get; set; }
         public int RoundNumber { get; set; }
         public int GameId { get; set; }
-        public virtual Game Game { get; set; }
+        public string? PlayerOneTurn { get; set; }
+        public string? PlayerTwoTurn { get; set; }
+        public int? WinnerId { get; set; }
+
         
+        public enum ResultOfGame
+        {
+            IncorrectResult = -1,
+            Draw = 0,
+            PlayerOneWin = 1,
+            PlayerTwoWin = 2
+        }
+
+
+        public virtual Game Game { get; set; }
         //[Column("WinnerId")]
-        public int WinnerId { get; set; }
+        
         [ForeignKey("WinnerId")]
         public virtual Player Player { get; set; }
 

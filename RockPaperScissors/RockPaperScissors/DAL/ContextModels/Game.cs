@@ -11,6 +11,11 @@ namespace RockPaperScissors.DAL.ContextModels
         public int PlayerOneId { get; set; }
         public int PlayerTwoId { get; set; }
 
+        [NotMapped]
+        public const int MAX_ROUNDS = 5;
+        [NotMapped]
+        public const int WINS_IN_ROUNDS_TO_WIN_THE_GAME = 5;
+
         //[ForeignKey("PlayerOneId")]
         public virtual Player PlayerOne { get; set; }
         //[ForeignKey("PlayerTwoId")]
