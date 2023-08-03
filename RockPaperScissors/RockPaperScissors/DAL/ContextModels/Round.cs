@@ -24,7 +24,6 @@ namespace RockPaperScissors.DAL.ContextModels
 
 
         public virtual Game Game { get; set; }
-        //[Column("WinnerId")]
         
         [ForeignKey("WinnerId")]
         public virtual Player Player { get; set; }

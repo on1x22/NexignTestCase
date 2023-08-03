@@ -1,11 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
+﻿using Microsoft.AspNetCore.Mvc;
 using RockPaperScissors.DAL.ContextModels;
-using RockPaperScissors.DAL.Contexts;
 using RockPaperScissors.Repository;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace RockPaperScissors.Controllers
 {
@@ -18,40 +14,6 @@ namespace RockPaperScissors.Controllers
         public gameController(IGameRepository repository)
         {
             this.repository = repository;
-        }
-
-        [HttpPost("addplayer")]
-        public async Task<IActionResult> AddPlayer([FromQuery] string playerName)
-        {
-            if (playerName == null)
-                return BadRequest("Не задано имя игрока");
-            if (!ModelState.IsValid)
-                return BadRequest("Некорректный запрос");
-
-            await repository.CreatePlayer_test(playerName);
-
-            return Ok();
-        }
-
-        [HttpGet("getallplayers")]
-        public async Task<IActionResult> GetAllPlayers()
-        {
-            return Ok(await repository.GetAllPlayers());
-
-        }
-
-        [HttpGet("getallgames")]
-        public async Task<IActionResult> GetAllGames()
-        {
-            return Ok(await repository.GetAllGames());
-
-        }
-
-        [HttpGet("getallrounds")]
-        public async Task<IActionResult> GetAllRounds()
-        {
-            return Ok(await repository.GetAllRounds());
-
         }
 
         [HttpPost("create")]
@@ -72,20 +34,12 @@ namespace RockPaperScissors.Controllers
             return Ok($"Игрок с кодом {game.PlayerOneId} создал игру {game.Id}");
         }
 
-        /*[HttpPost("create/withcomputer")]
-        public async Task<IActionResult> CreateGameWithComputer([FromQuery] string playerName)
-        {
-
-        }*/
-
         [HttpPost("{gameId}/join/{playerTwoName}")]
         public async Task<IActionResult> ConnectSecondPlayerToTheGame(int gameId, string playerTwoName)
         {
             var game = await repository.GetGame(gameId);
             if (game == null)
                 return BadRequest($"Игры с Id {gameId} не существует");
-
-            
 
             // Если игрок уже подключен к этой игре
             var player2 = await repository.GetPlayer(playerTwoName);
@@ -99,7 +53,7 @@ namespace RockPaperScissors.Controllers
 
             // Gдключение игрока к игре
             player2 = await repository.CreatePlayer(playerTwoName);
-            //game.PlayerTwoId = player2.Id;
+
             await repository.ConnectSecondPlayerToTheGame(game, player2);
 
             return Ok($"Игрок с кодом {game.PlayerTwoId} подключился к игре {game.Id}");
@@ -128,35 +82,16 @@ namespace RockPaperScissors.Controllers
                 return BadRequest("Задан некорректный ход. Должны быть только " +
                     "\"камень\", \"ножницы\" или \"бумага\"");
 
-            /*var resultTurn = */
             await repository.MakeTurn(gameId, playerId, turn);
-            /*if (resultTurn == null) 
-                return BadRequest("Задан некорректный ход. Должны быть только " +
-                    "\"камень\", \"ножницы\" или \"бумага\"");*/
-
+           
             var currentLastRound = await repository.GetLastRoundInGame(gameId);
             var resultTurn = currentLastRound.WinnerId.ToString();
 
-            /*if (resultTurn == null)
-                return BadRequest("Задан некорректный ход. Должны быть только " +
-                    "\"камень\", \"ножницы\" или \"бумага\"");*/
-
             if (int.TryParse(resultTurn, out _))
             {
-                return Ok(GetStatisticsOfRound(game, currentLastRound));
-                /*if (resultTurn == ((int)Round.ResultOfGame.Draw).ToString())
-                    return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
-                              $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
-                              $"Ничья в раунде {currentLastRound.RoundNumber}");
-
-                //var winnerId = await GetWinnerOfRoundId(gameId, (int)resultTurn);
-
-                return Ok($"Игрок 1 (Id {game.PlayerOneId}): {currentLastRound.PlayerOneTurn}\n" +
-                          $"Игрок 2 (Id {game.PlayerTwoId}): {currentLastRound.PlayerTwoTurn}\n" +
-                          $"В раунде {currentLastRound.RoundNumber} победил игрок с кодом {resultTurn}");*/
+                return Ok(GetStatisticsOfRound(game, currentLastRound));                
             }
-
-            
+                        
             var winnerInGame = await CheckWinnerOfGame(gameId);
             if (winnerInGame != Round.ResultOfGame.IncorrectResult)
             {
@@ -184,18 +119,13 @@ namespace RockPaperScissors.Controllers
             if (await CheckWinnerOfGame(gameId) == Round.ResultOfGame.IncorrectResult)
                 return BadRequest($"Статистика по игре с Id {gameId} не доступна, " +
                                   $"так как игра ещё не завершена");
-
-            
+                        
             var resultString = new StringBuilder();
             resultString.AppendLine($"Id игры {gameId}");
             foreach (var round in roundsInGame)
             {
                 if (round.WinnerId != null)
                     resultString.Append(GetStatisticsOfRound(game, round));
-                /*resultString.AppendLine($"Раунд {round.RoundNumber}\n" +
-                                        $"Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
-                                        $"Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n");*/
-
             }
 
             resultString.Append(GetWinnerOfGame(await CheckWinnerOfGame(gameId)) + "\n\n");
@@ -236,8 +166,6 @@ namespace RockPaperScissors.Controllers
                        $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
                        $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
                        $"   Результат: ничья\n\n";
-
-            //var winnerId = await GetWinnerOfRoundId(gameId, (int)resultTurn);
 
             return $"   Раунд {round.RoundNumber}\n" +
                    $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +

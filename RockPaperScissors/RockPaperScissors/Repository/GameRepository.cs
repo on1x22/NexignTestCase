@@ -22,7 +22,6 @@ namespace RockPaperScissors.Repository
 
         public async Task<List<Player>> GetAllPlayers()
         {
-            //var players = await dbContext.Players.ToListAsync();
             return await dbContext.Players.ToListAsync();
         }
 
@@ -34,12 +33,6 @@ namespace RockPaperScissors.Repository
         public async Task<List<Round>> GetAllRounds()
         {
             return await dbContext.Rounds.ToListAsync();
-        }
-
-
-        public Task<Player> CreateComputer()
-        {
-            throw new NotImplementedException();
         }
 
         public async Task<Player> CreatePlayer(string playerName, int? id = null)
@@ -64,7 +57,6 @@ namespace RockPaperScissors.Repository
 
             var game = new Game();
             game.PlayerOneId = player.Id;
-            //game.PlayerOne = player;
             await dbContext.Games.AddAsync(game);
             await dbContext.SaveChangesAsync();
 
@@ -81,18 +73,12 @@ namespace RockPaperScissors.Repository
             game.PlayerTwo = secondPlayer;
             dbContext.Attach(game);
             dbContext.Entry(game).Property(g => g.PlayerTwoId).IsModified=true;
-            //dbContext.Entry(game).Property(g =>g.PlayerTwo).IsModified=true;
             await dbContext.SaveChangesAsync();
         }
 
         public async Task<string> MakeTurn(int gameId, int playerId, string turn)
         {
-            /*if (!IsStringOfTurnCorrect(turn))
-                return default;*/
-
-            var round = await GetLastRoundInGame(gameId);/* await dbContext.Rounds.Where(r => r.GameId == gameId)
-                                              .OrderBy(r => r.RoundNumber)
-                                              .LastAsync();*/
+            var round = await GetLastRoundInGame(gameId);
 
             var isFirstPlayerTurn = GetGame(gameId).Result.PlayerOneId == playerId;
             if (!isFirstPlayerTurn)
@@ -117,10 +103,7 @@ namespace RockPaperScissors.Repository
             round.PlayerOneTurn = turn;
             dbContext.Entry(round).Property(r => r.PlayerOneTurn).IsModified = true;
             await dbContext.SaveChangesAsync();
-
-            //if (round.WinnerId >= 0)
-            //    return round.WinnerId.ToString();
-            
+                        
             return turn;
         }
 
@@ -129,7 +112,6 @@ namespace RockPaperScissors.Repository
                                   .OrderBy(r => r.RoundNumber)
                                   .LastAsync();
         
-
         public async Task<bool> CheckPlayerInGame(int gameId, int playerId)
         {
             var isPalyerInGame = await dbContext.Games.Where(g => g.Id == gameId &&
@@ -150,8 +132,7 @@ namespace RockPaperScissors.Repository
             // Если не сыграно ни одного раунда
             if (roundsInGame.Count() == 0)
             {
-                
-                CreateNewRound(gameId);
+                await CreateNewRound(gameId);
 
                 return game.PlayerOneId;
             }
@@ -168,14 +149,6 @@ namespace RockPaperScissors.Repository
                 winsOfPlayerTwo == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
                 return default;
 
-            /*var playerTwoTurnInLastRound = roundsInGame.Last().PlayerTwoTurn;
-            if (playerTwoTurnInLastRound == null)
-                return game.PlayerTwoId;
-
-            await CreateNewRound(gameId);
-
-            return game.PlayerOneId;*/
-
             var playerOneTurnInLastRound = roundsInGame.Last().PlayerOneTurn;
             if (playerOneTurnInLastRound == null)
                 return game.PlayerOneId;
@@ -191,11 +164,7 @@ namespace RockPaperScissors.Repository
 
         private async Task CreateNewRound(int gameId)
         {
-            //Round newRound = null;
             List<Round> roundsInGame = await dbContext.Rounds.Where(r => r.GameId == gameId).ToListAsync();
-
-
-            //var lastRoundNumber = dbContext.Rounds.Where(r => r.GameId == gameId).Max();
 
             if (roundsInGame.Count() < Game.MAX_ROUNDS)
             {
@@ -203,8 +172,8 @@ namespace RockPaperScissors.Repository
                 {
                     RoundNumber = roundsInGame.Count() + 1,
                     GameId = gameId,
-                    PlayerOneTurn = default,//"",
-                    PlayerTwoTurn = default//""
+                    PlayerOneTurn = default,
+                    PlayerTwoTurn = default
                 };
 
                 await dbContext.Rounds.AddAsync(newRound);
@@ -212,14 +181,9 @@ namespace RockPaperScissors.Repository
             }
         }
 
-        /*bool IsStringOfTurnCorrect(string turn)
-        {
-            return turn == "камень" || turn == "ножницы" || turn == "бумага";
-        }*/
-
         private ResultOfGame GetWnnerIdOfRound(Round round)
         {
-            ResultOfGame result;// = ResultOfGame.IncorrectResult;
+            ResultOfGame result;
 
             if (round.PlayerOneTurn == null || round.PlayerTwoTurn == null)
                 return ResultOfGame.IncorrectResult;
@@ -265,8 +229,6 @@ namespace RockPaperScissors.Repository
         public async Task<List<Round>> GetRoundsInGame(int gameId) =>
             await dbContext.Rounds.Where(r => r.GameId == gameId).ToListAsync();
 
-        
-
         public enum ResultOfGame
         {
             IncorrectResult = -1,
@@ -274,8 +236,6 @@ namespace RockPaperScissors.Repository
             PlayerOneWin = 1,
             PlayerTwoWin = 2
         }
-
-
     }
 
     
