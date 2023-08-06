@@ -30,7 +30,7 @@ namespace RockPaperScissors.Domain
 
         Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId);
 
-        /*Task<*/string/*>*/ ConvertWinnerIdToString(/*int gameId,*/ Round.ResultOfGame resultOfGame);
+        string ConvertWinnerIdToString(Round.ResultOfGame resultOfGame);
 
         string GetWinnerOfGame(Round.ResultOfGame resultOfGame);
     }

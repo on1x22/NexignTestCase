@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using RockPaperScissors.DAL.ContextModels;
+﻿using RockPaperScissors.DAL.ContextModels;
 using RockPaperScissors.DAL.Repository;
 
 namespace RockPaperScissors.Domain
@@ -39,11 +38,9 @@ namespace RockPaperScissors.Domain
 
             var game = new Game();
             game.PlayerOneId = player.Id;
-            //await dbContext.Games.AddAsync(game);
             await repository.CreateGame(game);
             
             await CreateNewRound(game.Id);
-            //await repository.SaveChanges();
             await SaveChanges();
             return game;
         }
@@ -63,7 +60,6 @@ namespace RockPaperScissors.Domain
                 };
 
                 await repository.CreateNewRound(newRound);
-                //await dbContext.SaveChangesAsync();
             }
         }
 
@@ -76,9 +72,7 @@ namespace RockPaperScissors.Domain
         public async Task ConnectSecondPlayerToTheGame(Game game, int secondPlayerId)
         {
             game.PlayerTwoId = secondPlayerId;
-            //game.PlayerTwo = secondPlayer;
-            //dbContext.Attach(game);
-            //dbContext.Entry(game).Property(g => g.PlayerTwoId).IsModified = true;
+
             await repository.ConnectSecondPlayerToTheGame(game);
             await SaveChanges();
         }
@@ -94,7 +88,7 @@ namespace RockPaperScissors.Domain
             // Если не сыграно ни одного раунда
             if (roundsInGame.Count == 0)
             {
-                await CreateNewRound(/*round*/gameId);
+                await CreateNewRound(gameId);
 
                 return game.PlayerOneId;
             }
@@ -119,7 +113,7 @@ namespace RockPaperScissors.Domain
             if (playerTwoTurnInLastRound == null)
                 return game.PlayerTwoId;
 
-            await CreateNewRound(/*newRound*/gameId);
+            await CreateNewRound(gameId);
             await SaveChanges();
 
             return game.PlayerOneId;
@@ -136,18 +130,15 @@ namespace RockPaperScissors.Domain
             if (!isFirstPlayerTurn)
             {
                 round.PlayerTwoTurn = turn;
-                //dbContext.Entry(round).Property(r => r.PlayerTwoTurn).IsModified = true;
 
                 var winnerIdInRound = GetWinnerIdOfRound(round);
                 if (winnerIdInRound == ResultOfGame.IncorrectResult)
                     return default;
 
                 round.WinnerId = (int)winnerIdInRound;
-                //dbContext.Entry(round).Property(r => r.WinnerId).IsModified = true;
 
                 if (round.WinnerId >= 0)
                 {
-                    //await dbContext.SaveChangesAsync();
                     repository.WriteTurn(round);
                     await SaveChanges();
                     return round.WinnerId.ToString();
@@ -155,8 +146,6 @@ namespace RockPaperScissors.Domain
             }
 
             round.PlayerOneTurn = turn;
-            //dbContext.Entry(round).Property(r => r.PlayerOneTurn).IsModified = true;
-            //await dbContext.SaveChangesAsync();
             repository.WriteTurn(round);
             await SaveChanges();
 
@@ -261,11 +250,9 @@ namespace RockPaperScissors.Domain
             return Round.ResultOfGame.IncorrectResult;
         }
 
-        public /*Task<*/string/*>*/ ConvertWinnerIdToString(/*int gameId,*/ Round.ResultOfGame resultOfGame)
+        public string ConvertWinnerIdToString(Round.ResultOfGame resultOfGame)
         {
             string winnerId = string.Empty;
-
-            //var game = await GetGame(gameId);
 
             switch (resultOfGame)
             {

@@ -16,6 +16,7 @@ app.Run();
 
 void RegisterServices(IServiceCollection services)
 {
+    services.AddLogging(builder => builder.AddConsole());
     services.AddControllers();
     services.AddEndpointsApiExplorer();
     services.AddSwaggerGen();
