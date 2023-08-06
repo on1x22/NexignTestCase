@@ -23,5 +23,15 @@ namespace RockPaperScissors.Domain
         Task<string> MakeTurn(int gameId, int playerId, string turn);
 
         Task<Round> GetLastRoundInGame(int gameId);
+
+        bool IsStringOfTurnCorrect(string turn);
+
+        string GetStatisticsOfRound(Game game, Round round);
+
+        Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId);
+
+        /*Task<*/string/*>*/ ConvertWinnerIdToString(/*int gameId,*/ Round.ResultOfGame resultOfGame);
+
+        string GetWinnerOfGame(Round.ResultOfGame resultOfGame);
     }
 }

@@ -138,7 +138,7 @@ namespace RockPaperScissors.Domain
                 round.PlayerTwoTurn = turn;
                 //dbContext.Entry(round).Property(r => r.PlayerTwoTurn).IsModified = true;
 
-                var winnerIdInRound = GetWnnerIdOfRound(round);
+                var winnerIdInRound = GetWinnerIdOfRound(round);
                 if (winnerIdInRound == ResultOfGame.IncorrectResult)
                     return default;
 
@@ -166,7 +166,7 @@ namespace RockPaperScissors.Domain
         public async Task<Round> GetLastRoundInGame(int gameId) =>
             await repository.GetLastRoundInGame(gameId);
 
-        private static ResultOfGame GetWnnerIdOfRound(Round round)
+        private static ResultOfGame GetWinnerIdOfRound(Round round)
         {
             ResultOfGame result;
 
@@ -208,6 +208,98 @@ namespace RockPaperScissors.Domain
                     break;
             }
 
+            return result;
+        }
+
+        public bool IsStringOfTurnCorrect(string turn)
+        {
+            return turn == "камень" || turn == "ножницы" || turn == "бумага";
+        }
+
+        public string GetStatisticsOfRound(Game game, Round round)
+        {
+            if (round.WinnerId == (int)Round.ResultOfGame.Draw)
+                return $"   Раунд {round.RoundNumber}\n" +
+                       $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
+                       $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
+                       $"   Результат: ничья\n\n";
+
+            return $"   Раунд {round.RoundNumber}\n" +
+                   $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
+                   $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
+                   $"   Результат: победа игрока {round.WinnerId}\n\n";
+        }
+
+        public async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
+        {
+            var roundsInGame = await GetRoundsInGame(gameId);
+
+            var winsOfPlayerOne = roundsInGame
+                .Where(r => r.WinnerId == (int)Round.ResultOfGame.PlayerOneWin).Count();
+            var winsOfPlayerTwo = roundsInGame
+                .Where(r => r.WinnerId == (int)Round.ResultOfGame.PlayerTwoWin).Count();
+
+            if (winsOfPlayerOne == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
+                return Round.ResultOfGame.PlayerOneWin;
+
+            if (winsOfPlayerTwo == Game.WINS_IN_ROUNDS_TO_WIN_THE_GAME)
+                return Round.ResultOfGame.PlayerTwoWin;
+
+            if (roundsInGame.Count() == Game.MAX_ROUNDS &&
+                roundsInGame[Game.MAX_ROUNDS - 1].PlayerTwoTurn != null)
+            {
+                if (winsOfPlayerOne > winsOfPlayerTwo)
+                    return Round.ResultOfGame.PlayerOneWin;
+
+                if (winsOfPlayerOne < winsOfPlayerTwo)
+                    return Round.ResultOfGame.PlayerTwoWin;
+
+                if (winsOfPlayerOne == winsOfPlayerTwo)
+                    return Round.ResultOfGame.Draw;
+            }
+
+            return Round.ResultOfGame.IncorrectResult;
+        }
+
+        public /*Task<*/string/*>*/ ConvertWinnerIdToString(/*int gameId,*/ Round.ResultOfGame resultOfGame)
+        {
+            string winnerId = string.Empty;
+
+            //var game = await GetGame(gameId);
+
+            switch (resultOfGame)
+            {
+                case Round.ResultOfGame.PlayerOneWin:
+                    winnerId = ((int)Round.ResultOfGame.PlayerOneWin).ToString();
+                    break;
+                case Round.ResultOfGame.PlayerTwoWin:
+                    winnerId = ((int)Round.ResultOfGame.PlayerTwoWin).ToString();
+                    break;
+                case Round.ResultOfGame.Draw:
+                    winnerId = ((int)Round.ResultOfGame.Draw).ToString();
+                    break;
+            }
+
+            return winnerId;
+        }
+
+        public string GetWinnerOfGame(Round.ResultOfGame resultOfGame)
+        {
+            string result = string.Empty;
+
+            switch (resultOfGame)
+            {
+                case (Round.ResultOfGame.PlayerOneWin):
+                case (Round.ResultOfGame.PlayerTwoWin):
+                    result = $"Результат игры: победа игрока {(int)resultOfGame}";
+                    break;
+                case (Round.ResultOfGame.Draw):
+                    result = $"Результат игры: ничья";
+                    break;
+                case (Round.ResultOfGame.IncorrectResult):
+                    result = $"Результат игры: ошибка";
+                    break;
+            }
             return result;
         }
 

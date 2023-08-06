@@ -17,7 +17,7 @@ namespace RockPaperScissors.DAL.Repository
         //Task ConnectSecondPlayerToTheGame(Game game, Player secondPlayer);
         Task ConnectSecondPlayerToTheGame(Game game/*, Player secondPlayer*/);
 
-        Task/*<string>*/ MakeTurn(int gameId, int playerId, string turn);
+        //Task<string> MakeTurn(int gameId, int playerId, string turn);
 
         void/*<string>*/ WriteTurn(/*string playerOneTurn, string playerTwoTurn, string winnerId*/ Round round);
 
@@ -25,7 +25,7 @@ namespace RockPaperScissors.DAL.Repository
 
         Task<bool> CheckPlayerInGame(int gameId, int playerId);
 
-        Task<int?> CheckWhoseTurn(int gameId);
+        //Task<int?> CheckWhoseTurn(int gameId);
 
         Task<List<Round>> GetRoundsInGame(int gameId);
 

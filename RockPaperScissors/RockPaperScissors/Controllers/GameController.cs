@@ -93,7 +93,7 @@ namespace RockPaperScissors.Controllers
                 return BadRequest($"Игрок с Id {playerId} ходит не в свой ход. " +
                     $"Ход необходимо выполнить другому игроку");
 
-            if (!IsStringOfTurnCorrect(turn))
+            if (!service.IsStringOfTurnCorrect(turn))
                 return BadRequest("Задан некорректный ход. Должны быть только " +
                     "\"камень\", \"ножницы\" или \"бумага\"");
 
@@ -106,19 +106,20 @@ namespace RockPaperScissors.Controllers
 
             if (int.TryParse(resultTurn, out _))
             {
-                return Ok(GetStatisticsOfRound(game, currentLastRound));                
+                return Ok(service.GetStatisticsOfRound(game, currentLastRound));                
             }
                         
-            var winnerInGame = await CheckWinnerOfGame(gameId);
+            //var winnerInGame = await CheckWinnerOfGame(gameId);
+            var winnerInGame = await service.CheckWinnerOfGame(gameId);
             if (winnerInGame != Round.ResultOfGame.IncorrectResult)
             {
-                var winnerId = await GetWinnerOfRoundId(gameId, winnerInGame);
+                var winnerId = /*await*/ service.ConvertWinnerIdToString(/*gameId,*/ winnerInGame);
                 return Ok($"Игрок {winnerId} победил в игре {gameId}");
             }
 
             if (game.PlayerTwoId == Player.COMPUTER_ID && currentLastRound.WinnerId == null)
             {
-                return await MakeTurn(gameId, game.PlayerTwoId, GetComputerTurn());
+                return await MakeTurn(gameId, game.PlayerTwoId, ComputerPlayer.GetTurn());
             }
 
             return Ok($"Игрок {playerId} выполнил ход");
@@ -135,7 +136,7 @@ namespace RockPaperScissors.Controllers
             //var roundsInGame = await repository.GetRoundsInGame(gameId);
             var roundsInGame = await service.GetRoundsInGame(gameId);
 
-            if (await CheckWinnerOfGame(gameId) == Round.ResultOfGame.IncorrectResult)
+            if (await service.CheckWinnerOfGame(gameId) == Round.ResultOfGame.IncorrectResult)
                 return BadRequest($"Статистика по игре с Id {gameId} не доступна, " +
                                   $"так как игра ещё не завершена");
                         
@@ -144,10 +145,10 @@ namespace RockPaperScissors.Controllers
             foreach (var round in roundsInGame)
             {
                 if (round.WinnerId != null)
-                    resultString.Append(GetStatisticsOfRound(game, round));
+                    resultString.Append(service.GetStatisticsOfRound(game, round));
             }
 
-            resultString.Append(GetWinnerOfGame(await CheckWinnerOfGame(gameId)) + "\n\n");
+            resultString.Append(service.GetWinnerOfGame(await service.CheckWinnerOfGame(gameId)) + "\n\n");
 
             return Ok(resultString.ToString());
         }
@@ -172,13 +173,13 @@ namespace RockPaperScissors.Controllers
             foreach (var round in roundsInGame)
             {
                 if (round.WinnerId != null)
-                    resultString.Append(GetStatisticsOfRound(game, round));
+                    resultString.Append(service.GetStatisticsOfRound(game, round));
             }
 
             return Ok(resultString.ToString());
         }
 
-        private string GetStatisticsOfRound (Game game, Round round)
+        /*private string GetStatisticsOfRound (Game game, Round round)
         {
             string result = string.Empty;
 
@@ -192,9 +193,9 @@ namespace RockPaperScissors.Controllers
                    $"   Игрок 1 (Id {game.PlayerOneId}): {round.PlayerOneTurn}\n" +
                    $"   Игрок 2 (Id {game.PlayerTwoId}): {round.PlayerTwoTurn}\n" +
                    $"   Результат: победа игрока {round.WinnerId}\n\n";
-        }
+        }*/
 
-        private async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
+        /*private async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
         {
             //var roundsInGame = await repository.GetRoundsInGame(gameId);
             var roundsInGame = await service.GetRoundsInGame(gameId);
@@ -224,14 +225,14 @@ namespace RockPaperScissors.Controllers
             }
 
             return Round.ResultOfGame.IncorrectResult;
-        }
+        }*/
 
-        private bool IsStringOfTurnCorrect(string turn)
+        /*private bool IsStringOfTurnCorrect(string turn)
         {
             return turn == "камень" || turn == "ножницы" || turn == "бумага";
-        }
+        }*/
 
-        private async Task<string> GetWinnerOfRoundId (int gameId, Round.ResultOfGame resultOfGame)
+        /*private async Task<string> GetWinnerOfRoundId (int gameId, Round.ResultOfGame resultOfGame)
         {
             string winnerId = string.Empty;
 
@@ -252,9 +253,9 @@ namespace RockPaperScissors.Controllers
             }
 
             return winnerId;
-        }
+        }*/
 
-        private string GetWinnerOfGame(Round.ResultOfGame resultOfGame)
+        /*private string GetWinnerOfGame(Round.ResultOfGame resultOfGame)
         {
             string result = string.Empty;
 
@@ -272,9 +273,9 @@ namespace RockPaperScissors.Controllers
                     break;
             }
             return result;
-        }
+        }*/
 
-        private string GetComputerTurn()
+        /*private string GetComputerTurn()
         {
             var random = new Random();
             var values = new List<string>{
@@ -284,6 +285,6 @@ namespace RockPaperScissors.Controllers
             int index = random.Next(values.Count);
             
             return values[index];
-        }
+        }*/
     }
 }

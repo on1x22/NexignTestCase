@@ -86,7 +86,7 @@ namespace RockPaperScissors.DAL.Repository
             dbContext.Entry(game).Property(g => g.PlayerTwoId).IsModified = true;
         }
 
-        public async Task/*<string>*/ MakeTurn(int gameId, int playerId, string turn)
+        /*public async Task<string> MakeTurn(int gameId, int playerId, string turn)
         {
             var round = await GetLastRoundInGame(gameId);
 
@@ -115,7 +115,7 @@ namespace RockPaperScissors.DAL.Repository
             await dbContext.SaveChangesAsync();
 
             //return turn;
-        }
+        }*/
 
         public void WriteTurn(/*string? playerOneTurn = default, string? playerTwoTurn = default, string? winnerId = default*/
                                    Round round)
@@ -140,7 +140,7 @@ namespace RockPaperScissors.DAL.Repository
         public async Task<Player> GetPlayer(string playerName) =>
             await dbContext.Players.FirstOrDefaultAsync(p => p.Name == playerName);
 
-        public async Task<int?> CheckWhoseTurn(int gameId)
+        /*public async Task<int?> CheckWhoseTurn(int gameId)
         {
             //var roundsInGame = await dbContext.Rounds.Where(r => r.GameId == gameId).ToListAsync();
             var roundsInGame = await GetRoundsInGame(gameId);
@@ -151,7 +151,7 @@ namespace RockPaperScissors.DAL.Repository
             {
                 Round round = new Round();
 
-                await CreateNewRound(/*gameId*/round);
+                await CreateNewRound(round);
 
                 return game.PlayerOneId;
             }
@@ -177,10 +177,10 @@ namespace RockPaperScissors.DAL.Repository
                 return game.PlayerTwoId;
 
             Round newRound = new Round();
-            await CreateNewRound(/*gameId*/newRound);
+            await CreateNewRound(newRound);
 
             return game.PlayerOneId;
-        }
+        }*/
 
         /*private async Task CreateNewRound(int gameId)
         {
@@ -207,7 +207,7 @@ namespace RockPaperScissors.DAL.Repository
 
 
 
-        private ResultOfGame GetWnnerIdOfRound(Round round)
+        /*private ResultOfGame GetWnnerIdOfRound(Round round)
         {
             ResultOfGame result;
 
@@ -250,7 +250,7 @@ namespace RockPaperScissors.DAL.Repository
             }
 
             return result;
-        }
+        }*/
 
         public async Task<List<Round>> GetRoundsInGame(int gameId) =>
             await dbContext.Rounds.Where(r => r.GameId == gameId).ToListAsync();
@@ -260,13 +260,13 @@ namespace RockPaperScissors.DAL.Repository
             await dbContext.SaveChangesAsync();
         }
 
-        public enum ResultOfGame
+        /*public enum ResultOfGame
         {
             IncorrectResult = -1,
             Draw = 0,
             PlayerOneWin = 1,
             PlayerTwoWin = 2
-        }
+        }*/
     }
 
 
