@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RockPaperScissors.DAL.ContextModels;
-using RockPaperScissors.Repository;
+using RockPaperScissors.DAL.Repository;
+using RockPaperScissors.Domain;
 using System.Text;
 
 namespace RockPaperScissors.Controllers
@@ -9,11 +10,14 @@ namespace RockPaperScissors.Controllers
     [Route("[controller]")]
     public class gameController : ControllerBase
     {
-        private readonly IGameRepository repository;
+        //private readonly IGameRepository repository;
+        private readonly IGameService service;
 
-        public gameController(IGameRepository repository)
+        public gameController(//IGameRepository repository,
+                              IGameService service)
         {
-            this.repository = repository;
+            //this.repository = repository;
+            this.service = service;
         }
 
         [HttpPost("create")]
@@ -21,10 +25,14 @@ namespace RockPaperScissors.Controllers
         {
             Player computer = null;
             if (withComputer == true)
-                computer = await repository.CreatePlayer("computer", id:Player.COMPUTER_ID);
+                //computer = await repository.CreatePlayer("computer", id:Player.COMPUTER_ID);
+                computer = await service.CreatePlayer("computer", id:Player.COMPUTER_ID);
 
-            var player1 = await repository.CreatePlayer(playerName);
-            var game = await repository.CreateGame(player1);
+
+            //var player1 = await repository.CreatePlayer(playerName);
+            var player1 = await service.CreatePlayer(playerName);
+            //var game = await repository.CreateGame(player1);
+            var game = await service.CreateGame(player1);
             if (game == null)
                 return BadRequest();
 
@@ -37,12 +45,14 @@ namespace RockPaperScissors.Controllers
         [HttpPost("{gameId}/join/{playerTwoName}")]
         public async Task<IActionResult> ConnectSecondPlayerToTheGame(int gameId, string playerTwoName)
         {
-            var game = await repository.GetGame(gameId);
+            //var game = await repository.GetGame(gameId);
+            var game = await service.GetGame(gameId);
             if (game == null)
                 return BadRequest($"Игры с Id {gameId} не существует");
 
             // Если игрок уже подключен к этой игре
-            var player2 = await repository.GetPlayer(playerTwoName);
+            //var player2 = await repository.GetPlayer(playerTwoName);
+            var player2 = await service.GetPlayer(playerTwoName);
             if (player2 != null && (game.PlayerOneId == player2.Id ||
                                     game.PlayerTwoId == player2.Id))
                 return BadRequest($"Игрок с Id {player2.Id} уже подключен к игре с Id {gameId}");
@@ -51,10 +61,12 @@ namespace RockPaperScissors.Controllers
             if(game.PlayerOneId != 0 && game.PlayerTwoId != 0)
                 return BadRequest($"Нельзя подключиться к существующей игре с Id {gameId}");
 
-            // Gдключение игрока к игре
-            player2 = await repository.CreatePlayer(playerTwoName);
+            // Подключение игрока к игре
+            //player2 = await repository.CreatePlayer(playerTwoName);
+            player2 = await service.CreatePlayer(playerTwoName);
 
-            await repository.ConnectSecondPlayerToTheGame(game, player2);
+            //await repository.ConnectSecondPlayerToTheGame(game, player2);
+            await service.ConnectSecondPlayerToTheGame(game, player2.Id);
 
             return Ok($"Игрок с кодом {game.PlayerTwoId} подключился к игре {game.Id}");
         }
@@ -62,15 +74,18 @@ namespace RockPaperScissors.Controllers
         [HttpPost("{gameId}/user/{playerId}/{turn}")]
         public async Task<IActionResult> MakeTurn(int gameId, int playerId, string turn)
         {
-            var game = await repository.GetGame(gameId);
+            //var game = await repository.GetGame(gameId);
+            var game = await service.GetGame(gameId);
             if (game == null)
                 return BadRequest($"Игры с Id {gameId} не существует");
 
-            bool isPlayerInGame = await repository.CheckPlayerInGame(gameId, playerId);
+            //bool isPlayerInGame = await repository.CheckPlayerInGame(gameId, playerId);
+            bool isPlayerInGame = await service.CheckPlayerInGame(gameId, playerId);
             if (!isPlayerInGame)
                 return BadRequest($"Игрок с кодом {playerId} не играл в игру {gameId}");
 
-            var playerNumberWhoseTurn = await repository.CheckWhoseTurn(gameId);
+            //var playerNumberWhoseTurn = await repository.CheckWhoseTurn(gameId);
+            var playerNumberWhoseTurn = await service.CheckWhoseTurn(gameId);
             if (playerNumberWhoseTurn == null)
                 return BadRequest($"Игра с Id {gameId} уже закончена. Начните новую игру");
 
@@ -82,9 +97,11 @@ namespace RockPaperScissors.Controllers
                 return BadRequest("Задан некорректный ход. Должны быть только " +
                     "\"камень\", \"ножницы\" или \"бумага\"");
 
-            await repository.MakeTurn(gameId, playerId, turn);
-           
-            var currentLastRound = await repository.GetLastRoundInGame(gameId);
+            //await repository.MakeTurn(gameId, playerId, turn);
+            await service.MakeTurn(gameId, playerId, turn);
+
+            //var currentLastRound = await repository.GetLastRoundInGame(gameId);
+            var currentLastRound = await service.GetLastRoundInGame(gameId);
             var resultTurn = currentLastRound.WinnerId.ToString();
 
             if (int.TryParse(resultTurn, out _))
@@ -110,11 +127,13 @@ namespace RockPaperScissors.Controllers
         [HttpGet("{gameId}/stat")]
         public async Task<IActionResult> GetStatisticsOfGame(int gameId)
         {
-            var game = await repository.GetGame(gameId);
-            if(game == null)
+            //var game = await repository.GetGame(gameId);
+            var game = await service.GetGame(gameId);
+            if (game == null)
                 return BadRequest($"Игра с Id {gameId} не существует");
 
-            var roundsInGame = await repository.GetRoundsInGame(gameId);
+            //var roundsInGame = await repository.GetRoundsInGame(gameId);
+            var roundsInGame = await service.GetRoundsInGame(gameId);
 
             if (await CheckWinnerOfGame(gameId) == Round.ResultOfGame.IncorrectResult)
                 return BadRequest($"Статистика по игре с Id {gameId} не доступна, " +
@@ -136,11 +155,13 @@ namespace RockPaperScissors.Controllers
         [HttpGet("{gameId}/stat/current")]
         public async Task<IActionResult> GetCurrentStatisticsOfGame(int gameId)
         {
-            var game = await repository.GetGame(gameId);
+            //var game = await repository.GetGame(gameId);
+            var game = await service.GetGame(gameId);
             if (game == null)
                 return BadRequest($"Игра с Id {gameId} не существует");
 
-            var roundsInGame = await repository.GetRoundsInGame(gameId);
+            //var roundsInGame = await repository.GetRoundsInGame(gameId);
+            var roundsInGame = await service.GetRoundsInGame(gameId);
             if (roundsInGame.Count() == 0 ||
                 (roundsInGame.Count() == 1 && roundsInGame[0].WinnerId == null))
                 return BadRequest($"В игре с Id {gameId} ещё не сыграно ни одного раунда");
@@ -175,7 +196,8 @@ namespace RockPaperScissors.Controllers
 
         private async Task<Round.ResultOfGame> CheckWinnerOfGame(int gameId)
         {
-            var roundsInGame = await repository.GetRoundsInGame(gameId);
+            //var roundsInGame = await repository.GetRoundsInGame(gameId);
+            var roundsInGame = await service.GetRoundsInGame(gameId);
 
             var winsOfPlayerOne = roundsInGame
                 .Where(r => r.WinnerId == (int)Round.ResultOfGame.PlayerOneWin).Count();
@@ -213,7 +235,8 @@ namespace RockPaperScissors.Controllers
         {
             string winnerId = string.Empty;
 
-            var game = await repository.GetGame (gameId);
+            //var game = await repository.GetGame (gameId);
+            var game = await service.GetGame(gameId);
 
             switch (resultOfGame)
             {

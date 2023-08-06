@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RockPaperScissors.DAL.Contexts;
-using RockPaperScissors.Repository;
+using RockPaperScissors.DAL.Repository;
+using RockPaperScissors.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ void RegisterServices(IServiceCollection services)
     services.AddEndpointsApiExplorer();
     services.AddSwaggerGen();
     services.AddTransient<IGameRepository, GameRepository>();
+    services.AddTransient<IGameService, GameService>();
 
     services.AddDbContext<GameDbContext>(options => 
         options.UseInMemoryDatabase("TestGameDb"));  
